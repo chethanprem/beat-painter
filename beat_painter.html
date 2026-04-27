@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beat Painter</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Abril+Fatface&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #07060f;
+  --surface: #0f0d1f;
+  --border: rgba(255,255,255,0.07);
+  --text: #e8e4ff;
+  --muted: rgba(232,228,255,0.35);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Space Mono', monospace;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ── */
+#header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 0.5px solid var(--border);
+  background: rgba(7,6,15,0.92);
+  backdrop-filter: blur(10px);
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+#logo {
+  font-family: 'Abril Fatface', serif;
+  font-size: 22px;
+  letter-spacing: 0.02em;
+  background: linear-gradient(135deg, #ff6ef7, #6ef7ff, #f7ff6e);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+#header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hbtn {
+  background: rgba(255,255,255,0.06);
+  border: 0.5px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  padding: 6px 14px;
+  color: var(--muted);
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.04em;
+}
+.hbtn:hover { background: rgba(255,255,255,0.12); color: var(--text); }
+.hbtn.active { background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.25); }
+
+#record-btn {
+  background: rgba(255,60,60,0.15);
+  border: 0.5px solid rgba(255,80,80,0.4);
+  border-radius: 8px;
+  padding: 6px 14px;
+  color: #ff8080;
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+#record-btn.recording {
+  background: rgba(255,60,60,0.3);
+  border-color: rgba(255,80,80,0.7);
+  color: #ffaaaa;
+  animation: recpulse 1s infinite;
+}
+@keyframes recpulse { 0%,100%{opacity:1;} 50%{opacity:0.6;} }
+
+#rec-dot { width:7px; height:7px; border-radius:50%; background:#ff4040; }
+
+/* ── Main layout ── */
+#main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ── Sidebar ── */
+#sidebar {
+  width: 200px;
+  flex-shrink: 0;
+  border-right: 0.5px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  overflow-y: auto;
+  padding-bottom: 16px;
+}
+
+.sidebar-section {
+  padding: 14px 14px 10px;
+  border-bottom: 0.5px solid var(--border);
+}
+
+.section-label {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+/* Scale picker */
+.scale-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.scale-btn {
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-family: 'Space Mono', monospace;
+  border: 0.5px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.04);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.scale-btn:hover { color: var(--text); background: rgba(255,255,255,0.08); }
+.scale-btn.active {
+  background: rgba(255,255,255,0.18);
+  color: #fff;
+  border-color: rgba(255,255,255,0.3);
+}
+
+/* Instrument picker */
+.inst-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.inst-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 0.5px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+.inst-btn:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+.inst-btn.active {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.18);
+  color: #fff;
+}
+.inst-icon { font-size: 15px; }
+
+/* Brush size */
+#brush-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+#brush-size {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 3px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+#brush-size::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  background: #e8e4ff;
+  cursor: pointer;
+}
+#brush-val {
+  font-size: 10px;
+  color: var(--muted);
+  min-width: 20px;
+  text-align: right;
+}
+
+/* Speed */
+#speed-row { display: flex; align-items: center; gap: 10px; }
+#speed-slider {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 3px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+#speed-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  background: #e8e4ff;
+  cursor: pointer;
+}
+#speed-val { font-size: 10px; color: var(--muted); min-width: 24px; text-align: right; }
+
+/* Color palette */
+.palette-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.palette-swatch {
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: transform 0.15s, border-color 0.15s;
+  position: relative;
+}
+.palette-swatch:hover { transform: scale(1.15); }
+.palette-swatch.active { border-color: #fff; transform: scale(1.15); }
+
+/* Echo/reverb toggles */
+.fx-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.fx-btn {
+  flex: 1;
+  padding: 6px 6px;
+  border-radius: 7px;
+  font-size: 10px;
+  font-family: 'Space Mono', monospace;
+  border: 0.5px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.04);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+  white-space: nowrap;
+}
+.fx-btn:hover { color: var(--text); }
+.fx-btn.active {
+  background: rgba(255,255,255,0.16);
+  color: #fff;
+  border-color: rgba(255,255,255,0.28);
+}
+
+/* ── Canvas area ── */
+#canvas-wrap {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #07060f;
+}
+
+#bg-canvas {
+  position: absolute; top:0; left:0;
+  width:100%; height:100%;
+}
+
+#draw-canvas {
+  position: absolute; top:0; left:0;
+  width:100%; height:100%;
+  cursor: crosshair;
+}
+
+/* Ripple overlay canvas */
+#ripple-canvas {
+  position: absolute; top:0; left:0;
+  width:100%; height:100%;
+  pointer-events: none;
+}
+
+/* ── Bottom bar ── */
+#bottombar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  border-top: 0.5px solid var(--border);
+  background: rgba(7,6,15,0.95);
+  backdrop-filter: blur(10px);
+  flex-shrink: 0;
+}
+
+#note-display {
+  font-family: 'Abril Fatface', serif;
+  font-size: 28px;
+  letter-spacing: 0.05em;
+  min-width: 80px;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+
+#waveform {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 32px;
+}
+.wave-bar {
+  width: 3px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.25);
+  transition: height 0.06s;
+  min-height: 2px;
+}
+
+#status {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  text-align: right;
+}
+
+/* ── Floating ripple particles ── */
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: rippleOut 0.7s ease-out forwards;
+}
+@keyframes rippleOut {
+  0%   { transform: scale(0); opacity: 0.8; }
+  100% { transform: scale(4); opacity: 0; }
+}
+
+/* ── Note label popup ── */
+#note-popup {
+  position: absolute;
+  font-family: 'Abril Fatface', serif;
+  font-size: 48px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.08s;
+  text-shadow: 0 0 30px currentColor;
+  z-index: 5;
+  transform: translate(-50%, -50%);
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div id="header">
+  <div id="logo">Beat Painter</div>
+  <div id="header-right">
+    <button class="hbtn active" id="trail-btn" onclick="toggleTrail()">✦ Trails</button>
+    <button class="hbtn" id="dark-btn" onclick="toggleTheme()">◑ Theme</button>
+    <button class="hbtn" onclick="clearCanvas()">⌫ Clear</button>
+    <button id="record-btn" onclick="toggleRecord()">
+      <div id="rec-dot"></div>
+      <span id="rec-label">Record</span>
+    </button>
+  </div>
+</div>
+
+<div id="main">
+  <!-- Sidebar -->
+  <div id="sidebar">
+
+    <!-- Scale -->
+    <div class="sidebar-section">
+      <div class="section-label">Scale</div>
+      <div class="scale-grid" id="scale-grid"></div>
+    </div>
+
+    <!-- Instrument -->
+    <div class="sidebar-section">
+      <div class="section-label">Instrument</div>
+      <div class="inst-list" id="inst-list"></div>
+    </div>
+
+    <!-- Brush -->
+    <div class="sidebar-section">
+      <div class="section-label">Brush Size</div>
+      <div id="brush-row">
+        <input type="range" id="brush-size" min="4" max="60" value="14">
+        <div id="brush-val">14</div>
+      </div>
+    </div>
+
+    <!-- Speed -->
+    <div class="sidebar-section">
+      <div class="section-label">Note Speed</div>
+      <div id="speed-row">
+        <input type="range" id="speed-slider" min="1" max="10" value="4">
+        <div id="speed-val">4</div>
+      </div>
+    </div>
+
+    <!-- Color -->
+    <div class="sidebar-section">
+      <div class="section-label">Colour</div>
+      <div class="palette-row" id="palette"></div>
+    </div>
+
+    <!-- FX -->
+    <div class="sidebar-section">
+      <div class="section-label">Effects</div>
+      <div class="fx-row">
+        <button class="fx-btn" id="fx-reverb" onclick="toggleFx('reverb')">Reverb</button>
+        <button class="fx-btn" id="fx-delay" onclick="toggleFx('delay')">Delay</button>
+      </div>
+      <div class="fx-row" style="margin-top:6px;">
+        <button class="fx-btn" id="fx-distort" onclick="toggleFx('distort')">Distort</button>
+        <button class="fx-btn" id="fx-chorus" onclick="toggleFx('chorus')">Chorus</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Canvas -->
+  <div id="canvas-wrap">
+    <canvas id="bg-canvas"></canvas>
+    <canvas id="draw-canvas"></canvas>
+    <canvas id="ripple-canvas"></canvas>
+    <div id="note-popup"></div>
+  </div>
+</div>
+
+<!-- Bottom bar -->
+<div id="bottombar">
+  <div id="note-display">—</div>
+  <div id="waveform"></div>
+  <div id="status">DRAW TO PLAY</div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// AUDIO ENGINE
+// ═══════════════════════════════════════════════════════════
+let audioCtx = null;
+let masterGain, reverbNode, delayNode, distortNode, chorusNode;
+let fx = { reverb: false, delay: false, distort: false, chorus: false };
+
+function ensureAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.value = 0.6;
+
+  // Reverb (convolver with synthetic impulse)
+  reverbNode = audioCtx.createConvolver();
+  const revLen = audioCtx.sampleRate * 2.5;
+  const revBuf = audioCtx.createBuffer(2, revLen, audioCtx.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = revBuf.getChannelData(ch);
+    for (let i = 0; i < revLen; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / revLen, 2.2);
+  }
+  reverbNode.buffer = revBuf;
+
+  // Delay
+  delayNode = audioCtx.createDelay(1.0);
+  delayNode.delayTime.value = 0.28;
+  const delayFB = audioCtx.createGain();
+  delayFB.gain.value = 0.38;
+  delayNode.connect(delayFB);
+  delayFB.connect(delayNode);
+
+  // Distortion
+  distortNode = audioCtx.createWaveShaper();
+  const distortCurve = new Float32Array(256);
+  for (let i = 0; i < 256; i++) {
+    const x = (i * 2) / 256 - 1;
+    distortCurve[i] = (Math.PI + 200) * x / (Math.PI + 200 * Math.abs(x));
+  }
+  distortNode.curve = distortCurve;
+
+  // Chorus (simple vibrato-style)
+  chorusNode = audioCtx.createDelay(0.05);
+  chorusNode.delayTime.value = 0.02;
+  const chorusLFO = audioCtx.createOscillator();
+  const chorusLFOGain = audioCtx.createGain();
+  chorusLFO.frequency.value = 3;
+  chorusLFOGain.gain.value = 0.003;
+  chorusLFO.connect(chorusLFOGain);
+  chorusLFOGain.connect(chorusNode.delayTime);
+  chorusLFO.start();
+
+  masterGain.connect(audioCtx.destination);
+}
+
+function buildChain(src) {
+  let node = src;
+  if (fx.distort) { node.connect(distortNode); node = distortNode; }
+  if (fx.chorus)  { node.connect(chorusNode);  node = chorusNode; }
+  if (fx.reverb)  { node.connect(reverbNode);  reverbNode.connect(masterGain); }
+  if (fx.delay)   { node.connect(delayNode);   delayNode.connect(masterGain); }
+  node.connect(masterGain);
+}
+
+function playNote(freq, instrument, duration = 0.4) {
+  ensureAudio();
+  if (!freq) return;
+  const t = audioCtx.currentTime;
+
+  const osc1 = audioCtx.createOscillator();
+  const osc2 = audioCtx.createOscillator();
+  const env  = audioCtx.createGain();
+
+  // Instrument shapes
+  const shapes = {
+    piano:    ['triangle', 'sine',     0.5, 0.015, 0.1,  duration * 0.9, 0],
+    synth:    ['sawtooth', 'square',   0.4, 0.01,  0.05, duration * 0.7, 0],
+    marimba:  ['sine',     'triangle', 0.6, 0.005, 0.05, duration * 0.4, 0],
+    flute:    ['sine',     'sine',     0.3, 0.03,  0.15, duration * 1.1, 0],
+    electric: ['sawtooth', 'sawtooth', 0.5, 0.008, 0.08, duration * 0.6, 0],
+    bells:    ['sine',     'triangle', 0.7, 0.002, 0.04, duration * 1.5, 0],
+  };
+
+  const [wt1, wt2, mix, att, dec, rel] = shapes[currentInstrument] || shapes.piano;
+  const dur = speedMult * duration;
+
+  osc1.type = wt1; osc1.frequency.value = freq;
+  osc2.type = wt2; osc2.frequency.value = freq * 2.002; // slight detune
+
+  const mix1 = audioCtx.createGain(); mix1.gain.value = mix;
+  const mix2 = audioCtx.createGain(); mix2.gain.value = 1 - mix;
+
+  osc1.connect(mix1); osc2.connect(mix2);
+  mix1.connect(env);  mix2.connect(env);
+
+  env.gain.setValueAtTime(0, t);
+  env.gain.linearRampToValueAtTime(0.7, t + att);
+  env.gain.exponentialRampToValueAtTime(0.35, t + att + dec);
+  env.gain.exponentialRampToValueAtTime(0.001, t + att + dec + rel);
+
+  buildChain(env);
+
+  osc1.start(t); osc2.start(t);
+  osc1.stop(t + att + dec + rel + 0.05);
+  osc2.stop(t + att + dec + rel + 0.05);
+
+  // Waveform visualizer kick
+  kickWave();
+}
+
+// ═══════════════════════════════════════════════════════════
+// SCALES & NOTES
+// ═══════════════════════════════════════════════════════════
+const SCALES = {
+  'Pentatonic': [0, 2, 4, 7, 9],
+  'Major':      [0, 2, 4, 5, 7, 9, 11],
+  'Minor':      [0, 2, 3, 5, 7, 8, 10],
+  'Dorian':     [0, 2, 3, 5, 7, 9, 10],
+  'Blues':      [0, 3, 5, 6, 7, 10],
+  'Chromatic':  [0,1,2,3,4,5,6,7,8,9,10,11],
+};
+const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
+let currentScale = 'Pentatonic';
+let currentInstrument = 'piano';
+let currentColor = '#ff6ef7';
+let brushSize = 14;
+let speedMult = 0.8;
+let trailsOn = true;
+let lightTheme = false;
+
+// Build note frequency table (C3–C6)
+function noteFreq(note, octave) {
+  const midi = (octave + 1) * 12 + note;
+  return 440 * Math.pow(2, (midi - 69) / 12);
+}
+
+function yToNote(y, canvasH) {
+  const scaleNotes = SCALES[currentScale];
+  // Map y to 3 octaves (C3–C5)
+  const totalNotes = scaleNotes.length * 3;
+  const noteIdx = Math.floor((1 - y / canvasH) * totalNotes);
+  const clamped = Math.max(0, Math.min(totalNotes - 1, noteIdx));
+  const octaveOffset = Math.floor(clamped / scaleNotes.length);
+  const scaleStep = clamped % scaleNotes.length;
+  const semitone = scaleNotes[scaleStep];
+  const octave = 3 + octaveOffset;
+  const freq = noteFreq(semitone, octave);
+  const name = NOTE_NAMES[semitone] + octave;
+  return { freq, name, semitone, octave };
+}
+
+// ═══════════════════════════════════════════════════════════
+// CANVAS SETUP
+// ═══════════════════════════════════════════════════════════
+const drawCanvas = document.getElementById('draw-canvas');
+const bgCanvas   = document.getElementById('bg-canvas');
+const ripCanvas  = document.getElementById('ripple-canvas');
+const dctx = drawCanvas.getContext('2d');
+const bctx = bgCanvas.getContext('2d');
+const rctx = ripCanvas.getContext('2d');
+
+function resizeCanvases() {
+  const wrap = document.getElementById('canvas-wrap');
+  const w = wrap.offsetWidth, h = wrap.offsetHeight;
+  [drawCanvas, bgCanvas, ripCanvas].forEach(c => { c.width = w; c.height = h; });
+  drawBgGrid();
+}
+window.addEventListener('resize', resizeCanvases);
+
+function drawBgGrid() {
+  const w = bgCanvas.width, h = bgCanvas.height;
+  bctx.clearRect(0, 0, w, h);
+  // Subtle grid
+  bctx.strokeStyle = lightTheme ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.03)';
+  bctx.lineWidth = 0.5;
+  const step = 40;
+  for (let x = 0; x < w; x += step) { bctx.beginPath(); bctx.moveTo(x,0); bctx.lineTo(x,h); bctx.stroke(); }
+  for (let y = 0; y < h; y += step) { bctx.beginPath(); bctx.moveTo(0,y); bctx.lineTo(w,y); bctx.stroke(); }
+  // Scale bands
+  const scaleNotes = SCALES[currentScale];
+  const totalNotes = scaleNotes.length * 3;
+  for (let i = 0; i < totalNotes; i++) {
+    const y1 = (1 - (i+1)/totalNotes) * h;
+    const y2 = (1 - i/totalNotes) * h;
+    const hue = (i / totalNotes) * 300;
+    bctx.fillStyle = lightTheme
+      ? `hsla(${hue},60%,50%,0.04)`
+      : `hsla(${hue},80%,60%,0.035)`;
+    bctx.fillRect(0, y1, w, y2 - y1);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// DRAWING
+// ═══════════════════════════════════════════════════════════
+let isDrawing = false;
+let lastX = 0, lastY = 0;
+let lastNoteTime = 0;
+let noteThrottle = 80; // ms between notes
+
+function getNoteColor(y) {
+  // Map y to hue
+  const hue = ((1 - y / drawCanvas.height) * 300 + 180) % 360;
+  return `hsl(${hue}, 90%, 65%)`;
+}
+
+function pointerPos(e) {
+  const rect = drawCanvas.getBoundingClientRect();
+  if (e.touches) {
+    return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+  }
+  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+}
+
+function startDraw(e) {
+  ensureAudio();
+  isDrawing = true;
+  const { x, y } = pointerPos(e);
+  lastX = x; lastY = y;
+  dctx.beginPath();
+  dctx.moveTo(x, y);
+  triggerNote(x, y, true);
+}
+
+let noteBuffer = []; // for recording
+
+function triggerNote(x, y, force = false) {
+  const now = Date.now();
+  const throttle = noteThrottle / speedMult;
+  if (!force && now - lastNoteTime < throttle) return;
+  lastNoteTime = now;
+
+  const { freq, name } = yToNote(y, drawCanvas.height);
+  playNote(freq, currentInstrument, 0.35 + brushSize * 0.012);
+  showNoteLabel(name, x, y);
+  spawnRipple(x, y);
+  updateNoteDisplay(name, freq);
+  if (recording) noteBuffer.push({ name, freq, time: now });
+}
+
+function draw(e) {
+  if (!isDrawing) return;
+  const { x, y } = pointerPos(e);
+
+  const col = currentColor === 'auto' ? getNoteColor(y) : currentColor;
+  const size = brushSize;
+
+  dctx.lineCap = 'round';
+  dctx.lineJoin = 'round';
+  dctx.lineWidth = size;
+
+  if (trailsOn) {
+    // Glowing trail
+    dctx.shadowBlur = size * 2.2;
+    dctx.shadowColor = col;
+    dctx.strokeStyle = col;
+    dctx.globalAlpha = 0.85;
+  } else {
+    dctx.shadowBlur = 0;
+    dctx.strokeStyle = col;
+    dctx.globalAlpha = 0.9;
+  }
+
+  dctx.beginPath();
+  dctx.moveTo(lastX, lastY);
+  dctx.lineTo(x, y);
+  dctx.stroke();
+
+  // Dot at position
+  dctx.beginPath();
+  dctx.arc(x, y, size / 2.5, 0, Math.PI * 2);
+  dctx.fillStyle = col;
+  dctx.globalAlpha = 0.5;
+  dctx.shadowBlur = size * 3;
+  dctx.fill();
+  dctx.globalAlpha = 1;
+  dctx.shadowBlur = 0;
+
+  lastX = x; lastY = y;
+  triggerNote(x, y);
+}
+
+function stopDraw() { isDrawing = false; }
+
+drawCanvas.addEventListener('mousedown', startDraw);
+drawCanvas.addEventListener('mousemove', draw);
+drawCanvas.addEventListener('mouseup', stopDraw);
+drawCanvas.addEventListener('mouseleave', stopDraw);
+drawCanvas.addEventListener('touchstart', e => { e.preventDefault(); startDraw(e); }, { passive: false });
+drawCanvas.addEventListener('touchmove',  e => { e.preventDefault(); draw(e); },      { passive: false });
+drawCanvas.addEventListener('touchend',   stopDraw);
+
+// Fade trail over time
+let fadeInterval = setInterval(() => {
+  if (!trailsOn) return;
+  dctx.globalAlpha = 0.012;
+  dctx.fillStyle = lightTheme ? 'rgba(240,235,255,0.012)' : 'rgba(7,6,15,0.012)';
+  dctx.globalAlpha = 1;
+  // Very slow fade
+  dctx.fillStyle = lightTheme ? 'rgba(245,240,255,0.008)' : 'rgba(7,6,15,0.008)';
+  dctx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
+}, 80);
+
+// ═══════════════════════════════════════════════════════════
+// RIPPLE EFFECT
+// ═══════════════════════════════════════════════════════════
+let ripples = [];
+
+function spawnRipple(x, y) {
+  const col = currentColor === 'auto' ? getNoteColor(y) : currentColor;
+  ripples.push({ x, y, r: brushSize / 2, maxR: brushSize * 5 + 40, col, alpha: 0.7, birth: Date.now() });
+}
+
+function animRipples() {
+  rctx.clearRect(0, 0, ripCanvas.width, ripCanvas.height);
+  const now = Date.now();
+  ripples = ripples.filter(rp => {
+    const age = now - rp.birth;
+    const life = 600;
+    if (age > life) return false;
+    const t = age / life;
+    const r = rp.r + (rp.maxR - rp.r) * t;
+    const alpha = rp.alpha * (1 - t);
+    rctx.beginPath();
+    rctx.arc(rp.x, rp.y, r, 0, Math.PI * 2);
+    rctx.strokeStyle = rp.col;
+    rctx.globalAlpha = alpha;
+    rctx.lineWidth = 1.5;
+    rctx.stroke();
+    rctx.globalAlpha = 1;
+    return true;
+  });
+  requestAnimationFrame(animRipples);
+}
+animRipples();
+
+// ═══════════════════════════════════════════════════════════
+// NOTE POPUP
+// ═══════════════════════════════════════════════════════════
+const notePopup = document.getElementById('note-popup');
+let popupTimeout;
+
+function showNoteLabel(name, x, y) {
+  const col = currentColor === 'auto' ? getNoteColor(y) : currentColor;
+  notePopup.textContent = name;
+  notePopup.style.color = col;
+  notePopup.style.left = x + 'px';
+  notePopup.style.top  = y + 'px';
+  notePopup.style.opacity = '1';
+  clearTimeout(popupTimeout);
+  popupTimeout = setTimeout(() => { notePopup.style.opacity = '0'; }, 320);
+}
+
+// ═══════════════════════════════════════════════════════════
+// BOTTOM BAR
+// ═══════════════════════════════════════════════════════════
+const noteDisplay = document.getElementById('note-display');
+const statusEl = document.getElementById('status');
+
+function updateNoteDisplay(name, freq) {
+  const col = currentColor === 'auto' ? '#ff6ef7' : currentColor;
+  noteDisplay.textContent = name;
+  noteDisplay.style.color = col;
+  noteDisplay.style.textShadow = `0 0 20px ${col}`;
+  noteDisplay.style.opacity = '1';
+  statusEl.textContent = Math.round(freq) + ' Hz  ·  ' + currentInstrument.toUpperCase();
+  clearTimeout(noteDisplay._t);
+  noteDisplay._t = setTimeout(() => { noteDisplay.style.opacity = '0.15'; }, 800);
+}
+
+// Waveform bars
+const waveformEl = document.getElementById('waveform');
+const BARS = 24;
+const bars = [];
+for (let i = 0; i < BARS; i++) {
+  const b = document.createElement('div');
+  b.className = 'wave-bar';
+  b.style.height = '3px';
+  waveformEl.appendChild(b);
+  bars.push(b);
+}
+let waveActive = false;
+
+function kickWave() {
+  waveActive = true;
+  bars.forEach((b, i) => {
+    const delay = i * 18;
+    setTimeout(() => {
+      const h = 4 + Math.random() * 28;
+      const col = currentColor === 'auto' ? '#ff6ef7' : currentColor;
+      b.style.height = h + 'px';
+      b.style.background = col;
+      b.style.boxShadow = `0 0 6px ${col}`;
+    }, delay);
+    setTimeout(() => {
+      b.style.height = '3px';
+      b.style.background = 'rgba(255,255,255,0.2)';
+      b.style.boxShadow = 'none';
+    }, delay + 280);
+  });
+  setTimeout(() => { waveActive = false; }, 300 + BARS * 18);
+}
+
+// ═══════════════════════════════════════════════════════════
+// SIDEBAR UI
+// ═══════════════════════════════════════════════════════════
+
+// Scales
+const scaleGrid = document.getElementById('scale-grid');
+Object.keys(SCALES).forEach(name => {
+  const btn = document.createElement('button');
+  btn.className = 'scale-btn' + (name === currentScale ? ' active' : '');
+  btn.textContent = name;
+  btn.onclick = () => {
+    currentScale = name;
+    document.querySelectorAll('.scale-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    drawBgGrid();
+  };
+  scaleGrid.appendChild(btn);
+});
+
+// Instruments
+const INSTRUMENTS = [
+  { id: 'piano',    icon: '🎹', label: 'Piano' },
+  { id: 'synth',    icon: '🎛️', label: 'Synth' },
+  { id: 'marimba',  icon: '🪘', label: 'Marimba' },
+  { id: 'flute',    icon: '🎵', label: 'Flute' },
+  { id: 'electric', icon: '⚡', label: 'Electric' },
+  { id: 'bells',    icon: '🔔', label: 'Bells' },
+];
+const instList = document.getElementById('inst-list');
+INSTRUMENTS.forEach(({ id, icon, label }) => {
+  const btn = document.createElement('button');
+  btn.className = 'inst-btn' + (id === currentInstrument ? ' active' : '');
+  btn.innerHTML = `<span class="inst-icon">${icon}</span>${label}`;
+  btn.onclick = () => {
+    currentInstrument = id;
+    document.querySelectorAll('.inst-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  };
+  instList.appendChild(btn);
+});
+
+// Brush
+document.getElementById('brush-size').addEventListener('input', e => {
+  brushSize = parseInt(e.target.value);
+  document.getElementById('brush-val').textContent = brushSize;
+});
+
+// Speed
+document.getElementById('speed-slider').addEventListener('input', e => {
+  const v = parseInt(e.target.value);
+  document.getElementById('speed-val').textContent = v;
+  speedMult = v / 4;
+  noteThrottle = Math.max(30, 120 - v * 10);
+});
+
+// Colours
+const PALETTE = [
+  { color: 'auto',    display: 'conic-gradient(from 0deg, #ff6ef7,#6ef7ff,#f7ff6e,#ff6ef7)', label: '🌈' },
+  { color: '#ff6ef7', display: '#ff6ef7' },
+  { color: '#6ef7ff', display: '#6ef7ff' },
+  { color: '#f7ff6e', display: '#f7ff6e' },
+  { color: '#ff8c5a', display: '#ff8c5a' },
+  { color: '#5affb0', display: '#5affb0' },
+  { color: '#b05aff', display: '#b05aff' },
+  { color: '#ffffff', display: '#ffffff' },
+];
+const palette = document.getElementById('palette');
+PALETTE.forEach(({ color, display, label }) => {
+  const sw = document.createElement('div');
+  sw.className = 'palette-swatch' + (color === currentColor ? ' active' : '');
+  if (display.startsWith('conic') || display.startsWith('linear')) {
+    sw.style.background = display;
+  } else {
+    sw.style.background = display;
+  }
+  if (label) sw.title = label;
+  sw.onclick = () => {
+    currentColor = color;
+    document.querySelectorAll('.palette-swatch').forEach(s => s.classList.remove('active'));
+    sw.classList.add('active');
+  };
+  palette.appendChild(sw);
+});
+
+// ═══════════════════════════════════════════════════════════
+// FX
+// ═══════════════════════════════════════════════════════════
+window.toggleFx = name => {
+  fx[name] = !fx[name];
+  document.getElementById('fx-' + name).classList.toggle('active', fx[name]);
+};
+
+// ═══════════════════════════════════════════════════════════
+// HEADER BUTTONS
+// ═══════════════════════════════════════════════════════════
+window.toggleTrail = () => {
+  trailsOn = !trailsOn;
+  document.getElementById('trail-btn').classList.toggle('active', trailsOn);
+};
+
+window.clearCanvas = () => {
+  dctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+  ripples = [];
+};
+
+window.toggleTheme = () => {
+  lightTheme = !lightTheme;
+  document.body.style.background = lightTheme ? '#f5f0ff' : '';
+  document.getElementById('canvas-wrap').style.background = lightTheme ? '#f5f0ff' : '#07060f';
+  drawBgGrid();
+  document.getElementById('dark-btn').classList.toggle('active', lightTheme);
+};
+
+// ═══════════════════════════════════════════════════════════
+// RECORDING
+// ═══════════════════════════════════════════════════════════
+let recording = false;
+let recStart = 0;
+
+window.toggleRecord = () => {
+  recording = !recording;
+  const btn = document.getElementById('record-btn');
+  const lbl = document.getElementById('rec-label');
+  if (recording) {
+    btn.classList.add('recording');
+    lbl.textContent = 'Stop';
+    noteBuffer = [];
+    recStart = Date.now();
+  } else {
+    btn.classList.remove('recording');
+    lbl.textContent = 'Record';
+    if (noteBuffer.length) playbackRecording();
+  }
+};
+
+function playbackRecording() {
+  if (!noteBuffer.length) return;
+  ensureAudio();
+  const start = noteBuffer[0].time;
+  const msg = document.createElement('div');
+  msg.style.cssText = 'position:fixed;bottom:70px;right:20px;background:rgba(0,0,0,0.7);color:#fff;padding:8px 16px;border-radius:10px;font-size:11px;font-family:Space Mono;z-index:99;';
+  msg.textContent = '▶ Playing back ' + noteBuffer.length + ' notes…';
+  document.body.appendChild(msg);
+  noteBuffer.forEach(({ freq, time }) => {
+    const delay = (time - start) / 1000;
+    setTimeout(() => playNote(freq, currentInstrument, 0.4), delay * 1000);
+  });
+  setTimeout(() => msg.remove(), (noteBuffer[noteBuffer.length - 1].time - start) + 1500);
+}
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+resizeCanvases();
+
+// Keyboard shortcut: Space to clear, R to record
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space' && !e.target.matches('input')) { e.preventDefault(); clearCanvas(); }
+  if (e.code === 'KeyR' && !e.target.matches('input')) toggleRecord();
+});
+</script>
+</body>
+</html>
